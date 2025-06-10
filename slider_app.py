@@ -4,15 +4,10 @@ import random
 import pandas as pd
 import plotly.express as px
 
-# ------------------ 1. Globale Daten für ALLE Sessions ------------------
-@st.experimental_singleton
-def get_store():
-    """Gibt ein Dictionary zurück, das von allen Browser-Tabs geteilt wird."""
-    return {"scene": None, "votes": []}
+# ---------- 1. Globale Daten (für alle Sessions gemeinsam) ----------
+STORE = {"scene": None, "votes": []}
 
-STORE = get_store()
-
-# ------------------ 2. Beispielsätze ------------------
+# ---------- 2. Beispielsätze ----------
 EXAMPLES = [
     "„Haha, wie du wieder aussiehst!“",
     "Ignoriert jede Meldung in der Gruppe.",
@@ -23,7 +18,7 @@ EXAMPLES = [
     "Verteilt fiese Memes über eine Person."
 ]
 
-# ------------------ 3. Hauptfunktion ------------------
+# ---------- 3. Hauptfunktion ----------
 def run_slider():
     st.header("GrenzCheck 🔍")
 
@@ -58,7 +53,7 @@ def run_slider():
     votes = STORE["votes"]
     st.write(f"**{len(votes)} Stimmen**")
 
-    # ------------------ 4. Histogramm ------------------
+    # ---------- 4. Histogramm ----------
     if votes:
         df = pd.DataFrame({"Score": votes})
 
