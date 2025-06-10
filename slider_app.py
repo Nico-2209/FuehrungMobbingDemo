@@ -1,11 +1,11 @@
-# slider_app.py  – Live-Refresh & Vote-Sperre
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh  #  NEW
 import random, pandas as pd, plotly.express as px
 
-# ------------------ 1. Gemeinsamer Speicher ------------------
-STORE = {"scene": None, "votes": []}           # global für alle Sessions
+# ------- gemeinsamer Speicher für alle Sessions -------
+STORE = {"scene": None, "votes": []}
 
-# ------------------ 2. Beispiele ------------------
+# ------- realistische Beispiele -------
 EXAMPLES = [
     "Im Klassenchat: »Junge, du stinkst – setz dich woanders!«",
     "Screenshot vom schlechten Zeugnis wird in die Gruppe gestellt.",
@@ -19,58 +19,52 @@ EXAMPLES = [
 def run_slider():
     st.header("GrenzCheck 🔍")
 
-    # (a) Szene setzen
+    # Szene einmalig setzen
     if STORE["scene"] is None:
         STORE["scene"] = random.choice(EXAMPLES)
 
-    # -------- Per-Tab State initialisieren --------
-    if "voted" not in st.session_state:
-        st.session_state.voted = False
-    if "current_scene" not in st.session_state:
-        st.session_state.current_scene = STORE["scene"]
+    # Session-State pro Browser-Tab
+    st.session_state.setdefault("voted", False)
+    st.session_state.setdefault("current_scene", STORE["scene"])
 
-    # Wenn Moderator die Szene gewechselt hat → Vote zurücksetzen
+    # Szene gewechselt → Vote zurücksetzen
     if st.session_state.current_scene != STORE["scene"]:
         st.session_state.voted = False
         st.session_state.current_scene = STORE["scene"]
 
-    # -------- Moderator-Seitenleiste --------
+    # -------- Moderator-Panel --------
     is_mod = st.sidebar.checkbox("Moderator-Ansicht", False)
     if is_mod:
-        # Auto-Refresh alle 2 Sek, damit Chart live updatet
+        # Auto-Refresh alle 2 s (nur beim Moderator)
+        st_autorefresh(interval=2000, key="live_refresh")
 
-        st.autorefresh(interval=2000, key="refresh")
-
-        # Szene wählen
         STORE["scene"] = st.sidebar.selectbox(
             "Beispiel wählen", EXAMPLES,
             index=EXAMPLES.index(STORE["scene"])
         )
-        # Reset
         if st.sidebar.button("Stimmen zurücksetzen"):
             STORE["votes"].clear()
             st.session_state.voted = False
 
-    # -------- Scene Display & Voting --------
+    # -------- Voting --------
     st.subheader(STORE["scene"])
 
     col1, col2 = st.columns([3, 1])
     with col1:
         vote = st.slider(
             "Wie schlimm findest du das?", 0, 100, 50, step=1,
-            help="0 = alles okay · 100 = klares Mobbing",
-            disabled=st.session_state.voted      # Slider deaktiviert nach Vote
+            disabled=st.session_state.voted
         )
     with col2:
         if st.button("✅ Abstimmen", disabled=st.session_state.voted):
             STORE["votes"].append(vote)
             st.session_state.voted = True
-            st.rerun()    # nur eigener Tab – Moderator wird via Auto-Refresh aktualisiert
+            st.rerun()                      # sofortiges Redraw für diesen Tab
 
     st.write(f"**{len(STORE['votes'])} Stimmen**")
 
     # -------- Ergebnisanzeige --------
-    if STORE["votes"] and is_mod:          # Chart nur für Moderator
+    if STORE["votes"] and is_mod:
         df = pd.DataFrame({"Score": STORE["votes"]})
         bins = list(range(0, 101, 5))
         labels = [f"{b}-{b+4}" for b in bins[:-2]] + ["95-100"]
@@ -78,8 +72,7 @@ def run_slider():
                            right=True, include_lowest=True)
 
         chart = px.histogram(
-            df, x="Bin",
-            category_orders={"Bin": labels},
+            df, x="Bin", category_orders={"Bin": labels},
             labels={"Bin": "Schweregrad"},
             title="Verteilung der Stimmen",
             color_discrete_sequence=["#3E7CB1"]
