@@ -1,48 +1,59 @@
 import streamlit as st
-import matplotlib.pyplot as plt
+import plotly.express as px
 import random
+import pandas as pd
 
 EXAMPLES = [
     "„Haha, wie du wieder aussiehst!“",
-    "Jemand wird jeden Tag ignoriert.",
-    "„Schreib mir die Hausaufgaben, sonst …“",
-    "Foto ohne Einwilligung gepostet."
+    "Ignoriert jede Meldung in der Gruppe.",
+    "„Gib mir deine Hausaufgaben, sonst …“",
+    "Peinliches Foto ohne Einwilligung gepostet.",
+    "Abfälliger Spitzname vor der Klasse.",
+    "Droht im Spielchat mit Bann, wenn …",
+    "Verteilt fiese Memes über eine Person."
 ]
 
 def run_slider():
     st.header("GrenzCheck 🔍")
 
-    # Szene festlegen (einmalig)
+    # Moderator-Panel
     if "scene" not in st.session_state:
         st.session_state.scene = random.choice(EXAMPLES)
+    with st.sidebar:
+        if st.checkbox("Moderator", False):
+            st.session_state.scene = st.selectbox(
+                "Satz wählen", EXAMPLES,
+                index=EXAMPLES.index(st.session_state.scene)
+            )
+            if st.button("Stimmen zurücksetzen"):
+                st.session_state.votes = []
 
-    # Moderator-Tools (Seitenleiste)
-    if st.sidebar.checkbox("Moderator", False):
-        st.session_state.scene = st.sidebar.selectbox(
-            "Satz wählen", EXAMPLES,
-            index=EXAMPLES.index(st.session_state.scene)
-        )
-        if st.sidebar.button("Stimmen zurücksetzen"):
-            st.session_state.votes = []
-
-    # Satz anzeigen
     st.subheader(st.session_state.scene)
 
-    # Slider + Vote-Button
-    vote = st.slider("Wie schlimm? 0 = OK … 100 = Mobbing", 0, 100, 50)
-    if st.button("Abstimmen"):
-        st.session_state.setdefault("votes", []).append(vote)
+    # ---- Slider ----
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        vote = st.slider("Wie schlimm findest du das?", 0, 100, 50,
+                         step=1, help="0 = OK, 100 = klares Mobbing")
+    with col2:
+        if st.button("✅ Abstimmen"):
+            st.session_state.setdefault("votes", []).append(vote)
 
     votes = st.session_state.get("votes", [])
-    st.write(f"Abgegebene Stimmen: **{len(votes)}**")
+    st.write(f"**{len(votes)} Stimmen**")
 
-    # Live-Histogramm
+    # ---- Grafik: gruppiert in 5-er-Schritte ----
     if votes:
-        fig, ax = plt.subplots()
-        ax.hist(votes, bins=10, edgecolor="white")
-        ax.set_xlabel("Schweregrad")
-        ax.set_ylabel("Anzahl")
-        st.pyplot(fig)
+        df = pd.DataFrame({"Score": votes})
+        bins = list(range(0, 105, 5))
+        df["Bin"] = pd.cut(df["Score"], bins=bins, right=False)
+        chart = px.histogram(df, x="Bin", nbins=20,
+                             labels={"Bin": "Schweregrad"},
+                             title="Verteilung der Stimmen",
+                             color_discrete_sequence=["#3E7CB1"])
+        chart.update_layout(yaxis_title="Anzahl")
+        st.plotly_chart(chart, use_container_width=True)
+
         st.metric("Durchschnitt", f"{sum(votes)/len(votes):.1f} / 100")
     else:
-        st.info("Noch keine Stimmen.")
+        st.info("Noch keine Stimmen abgegeben.")
