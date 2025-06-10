@@ -10,42 +10,38 @@ STORE = {"scene_idx": None, "votes": []}
 RAW_SCENES = [
     "Die Klasse plant im WhatsApp-Chat einen Geburtstagsausflug. Alle schreiben begeistert – nur Leon wird nicht eingeladen. Später postet jemand ein Meme: „Leon = Forever Alone 😂“. 23 Mitschüler reagieren mit „🤣“-Emoji.",
     "In Moodle fragt Chiara (1. Semester) nach einer Formel. Mehrere antworten ironisch: „Googeln hilft 😉“. Ein Thread mit 40 Upvotes macht sich lustig. Abends bekommt sie eine Direktnachricht: „Erst nachdenken, Brainlet!“",
-    "Im Valorant-Discord ruft einer: „Halt die Klappe, Mädel, nimm Healer und kusch!“ Als sie protestiert, droht er: „Doxx dich gleich auf Twitter“.",
-    "In der Schulkantine wird heimlich ein Video von Tom beim Essen aufgenommen. Auf TikTok landet es mit #WhaleWatch. 12 000 Views, viele Kommentare wie „Diät gefällig?“.",
+    "Im Valorant-Discord ruft einer: „Halt die Klappe, Mädel, nimm Healer und kusch!“ Als sie protestiert, droht er: „Doxx dich gleich auf Twitter“. ",
+    "In der Schulkantine wird heimlich ein Video von Tom beim Essen aufgenommen. Auf TikTok landet es mit #WhaleWatch. 12 000 Views, viele Kommentare wie „Diät gefällig?“. ",
     "Beim Gruppen-Referat teilen sich drei Studenten ein Google-Doc und laden Sarah nicht ein. Sie soll nur eine „Deko-Folie“ erstellen. Ihre Ideen werden danach öffentlich zerrissen.",
     "Im Firmen-Slack postet jemand ein Party-Foto von Max, betrunken beim Sommerfest. Kollegen kommentieren: „Quality Assurance 🍻“. Das Bild bleibt angepinnt."
 ]
 
-# 3) Helper: Szene & Vote-Logik
+# 3) Helper: Szene-Logik
 def init_scene():
     if STORE["scene_idx"] is None:
         STORE["scene_idx"] = random.randrange(len(RAW_SCENES))
         STORE["votes"].clear()
 
-def current_story():
-    idx = STORE["scene_idx"]
-    text = RAW_SCENES[idx]
-    return idx, text
-
 # 4) Hauptfunktion
 def run_slider():
-    # a) Autorefresh für alle (2 Sek)
+    # a) Autorefresh für alle (2 Sek.)
     st_autorefresh(interval=2000, key="global_refresh")
 
     st.header("GrenzCheck 🔍")
 
     # b) Init Scene & Session-State
     init_scene()
-    idx, story = current_story()
+    idx = STORE["scene_idx"]
+    story = RAW_SCENES[idx]
     st.session_state.setdefault("voted", False)
     st.session_state.setdefault("scene_at_load", idx)
 
-    # c) Detect Scene-Change → Vote zurücksetzen
+    # Szene gewechselt → Vote zurücksetzen
     if st.session_state.scene_at_load != idx:
         st.session_state.voted = False
         st.session_state.scene_at_load = idx
 
-    # d) Moderator-Panel
+    # c) Moderator-Panel
     is_mod = st.sidebar.checkbox("Moderator-Ansicht", False)
     if is_mod:
         new_idx = st.sidebar.selectbox(
@@ -62,13 +58,11 @@ def run_slider():
             STORE["votes"].clear()
             st.session_state.voted = False
 
-    # e) Show Story (Teaser + Expander)
-    st.subheader("📝 Situation (Kurz-Teaser):")
-    st.markdown(f"> {story[:100]}…")
-    with st.expander("Gesamten Text anzeigen"):
-        st.write(story)
+    # d) Story einmal anzeigen
+    st.subheader("📝 Situation:")
+    st.write(story)
 
-    # f) Voting UI
+    # e) Voting UI
     col1, col2 = st.columns([3,1])
     with col1:
         vote = st.slider(
@@ -83,13 +77,13 @@ def run_slider():
 
     st.write(f"**{len(STORE['votes'])} Stimmen insgesamt**")
 
-    # g) Feedback für User
+    # f) Feedback für User
     if st.session_state.voted:
         st.success("Danke! Dein Vote ist gespeichert.")
     else:
         st.info("Abstimmen, um dein Ergebnis zu sehen!")
 
-    # h) Chart nur für Moderator
+    # g) Chart nur für Moderator
     if STORE["votes"] and is_mod:
         df = pd.DataFrame({"Score": STORE["votes"]})
         bins = list(range(0, 101, 5))
