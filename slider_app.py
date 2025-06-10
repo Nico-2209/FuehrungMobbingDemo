@@ -38,7 +38,7 @@ def run_slider():
     is_mod = st.sidebar.checkbox("Moderator-Ansicht", False)
     if is_mod:
         # Auto-Refresh alle 2 Sek, damit Chart live updatet
-        st.experimental_data_editor           # dummy to register session? not needed
+
         st.autorefresh(interval=2000, key="refresh")
 
         # Szene wählen
