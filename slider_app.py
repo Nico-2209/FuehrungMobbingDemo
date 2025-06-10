@@ -1,8 +1,18 @@
+# slider_app.py
 import streamlit as st
-import plotly.express as px
 import random
 import pandas as pd
+import plotly.express as px
 
+# ------------------ 1. Globale Daten für ALLE Sessions ------------------
+@st.experimental_singleton
+def get_store():
+    """Gibt ein Dictionary zurück, das von allen Browser-Tabs geteilt wird."""
+    return {"scene": None, "votes": []}
+
+STORE = get_store()
+
+# ------------------ 2. Beispielsätze ------------------
 EXAMPLES = [
     "„Haha, wie du wieder aussiehst!“",
     "Ignoriert jede Meldung in der Gruppe.",
@@ -13,53 +23,55 @@ EXAMPLES = [
     "Verteilt fiese Memes über eine Person."
 ]
 
+# ------------------ 3. Hauptfunktion ------------------
 def run_slider():
     st.header("GrenzCheck 🔍")
 
-    # Moderator-Panel
-    if "scene" not in st.session_state:
-        st.session_state.scene = random.choice(EXAMPLES)
+    # (a) Szene initialisieren
+    if STORE["scene"] is None:
+        STORE["scene"] = random.choice(EXAMPLES)
+
+    # (b) Moderator-Panel (Sidebar)
     with st.sidebar:
         if st.checkbox("Moderator", False):
-            st.session_state.scene = st.selectbox(
+            STORE["scene"] = st.selectbox(
                 "Satz wählen", EXAMPLES,
-                index=EXAMPLES.index(st.session_state.scene)
+                index=EXAMPLES.index(STORE["scene"])
             )
             if st.button("Stimmen zurücksetzen"):
-                st.session_state.votes = []
+                STORE["votes"].clear()
 
-    st.subheader(st.session_state.scene)
+    # (c) Szene anzeigen
+    st.subheader(STORE["scene"])
 
-    # ---- Slider ----
+    # (d) Slider + Abstimm-Button
     col1, col2 = st.columns([3, 1])
     with col1:
-        vote = st.slider("Wie schlimm findest du das?", 0, 100, 50,
-                         step=1, help="0 = OK, 100 = klares Mobbing")
+        vote = st.slider("Wie schlimm findest du das?",
+                         0, 100, 50, step=1,
+                         help="0 = OK, 100 = klares Mobbing")
     with col2:
         if st.button("✅ Abstimmen"):
-            st.session_state.setdefault("votes", []).append(vote)
+            STORE["votes"].append(vote)
+            st.experimental_rerun()   # alle Tabs sofort aktualisieren
 
-    votes = st.session_state.get("votes", [])
+    votes = STORE["votes"]
     st.write(f"**{len(votes)} Stimmen**")
 
-    # ---- Grafik: gruppiert in 5er-Schritten (inkl. 100) ----
+    # ------------------ 4. Histogramm ------------------
     if votes:
         df = pd.DataFrame({"Score": votes})
 
-        # Bins: 0-4, 5-9, …, 95-100  (100 ist jetzt drin)
-        bins = list(range(0, 101, 5))  # 0,5,10,…,100
-        labels = [f"{b}-{b + 4}" for b in bins[:-2]] + ["95-100"]
+        # Bins: 0-4, 5-9, …, 95-100  (100 eingeschlossen)
+        bins = list(range(0, 101, 5))
+        labels = [f"{b}-{b+4}" for b in bins[:-2]] + ["95-100"]
         df["Bin"] = pd.cut(
-            df["Score"],
-            bins=bins,
-            labels=labels,
-            right=True,  # oberer Rand eingeschlossen
-            include_lowest=True
+            df["Score"], bins=bins, labels=labels,
+            right=True, include_lowest=True
         )
 
         chart = px.histogram(
-            df,
-            x="Bin",
+            df, x="Bin",
             category_orders={"Bin": labels},
             labels={"Bin": "Schweregrad"},
             title="Verteilung der Stimmen",
@@ -71,10 +83,8 @@ def run_slider():
             xaxis_tickangle=-45,
             xaxis_tickfont_size=11
         )
-
         st.plotly_chart(chart, use_container_width=True)
-        st.metric("Durchschnitt", f"{sum(votes) / len(votes):.1f} / 100")
+
+        st.metric("Durchschnitt", f"{sum(votes)/len(votes):.1f} / 100")
     else:
         st.info("Noch keine Stimmen abgegeben.")
-
-
