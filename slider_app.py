@@ -42,18 +42,27 @@ def run_slider():
     votes = st.session_state.get("votes", [])
     st.write(f"**{len(votes)} Stimmen**")
 
-    # ---- Grafik: gruppiert in 5-er-Schritte ----
+    # ---- Grafik: gruppiert in 5er-Schritten ----
     if votes:
         df = pd.DataFrame({"Score": votes})
         bins = list(range(0, 105, 5))
-        df["Bin"] = pd.cut(df["Score"], bins=bins, right=False)
-        chart = px.histogram(df, x="Bin", nbins=20,
-                             labels={"Bin": "Schweregrad"},
-                             title="Verteilung der Stimmen",
-                             color_discrete_sequence=["#3E7CB1"])
-        chart.update_layout(yaxis_title="Anzahl")
+        labels = [f"{b}-{b+4}" for b in bins[:-1]]
+        df["Bin"] = pd.cut(df["Score"], bins=bins, labels=labels, right=False)
+
+        chart = px.histogram(
+            df,
+            x="Bin",
+            category_orders={"Bin": labels},
+            labels={"Bin": "Schweregrad"},
+            title="Verteilung der Stimmen",
+            color_discrete_sequence=["#3E7CB1"]
+        )
+        chart.update_layout(
+            yaxis_title="Anzahl",
+            bargap=0.05,
+            xaxis_tickangle=-45
+        )
         st.plotly_chart(chart, use_container_width=True)
 
         st.metric("Durchschnitt", f"{sum(votes)/len(votes):.1f} / 100")
-    else:
-        st.info("Noch keine Stimmen abgegeben.")
+
