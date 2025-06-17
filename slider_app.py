@@ -4,17 +4,34 @@ import plotly.express as px
 
 # ─── 1. Szenen ──────────────────────────────────────────────────────────────
 SCENES = [
-    "Die Klasse plant über WhatsApp einen Überraschungsausflug. Leon bleibt außen vor …",
-    "Chiara fragt im Moodle nach Integralrechnen. Antwort-Meme: „RTFM 📚“ …",
-    "Screenshot aus Lisas Privat-Chat (sie nennt jmd. „Zicke“) landet im Kurs-Chat …",
-    "Lehrer stellt 11 Schüler in Zweierteams – Maria bleibt allein zurück …",
-    "Streit-Video wird TikTok-Hit mit 1 500 Likes, Kommentar „LOL loser“ …",
-    "Slack-Scherz: „Petra braucht wohl bald einen Rollator …“ …",
-    "Insta-Story: Ungefiltertes Selfie + Sticker „Real Beauty Filter OFF“ …",
-    "Nachbarschafts-Chat: Maya bittet um Ruhe → Memes „Okay Karen“ …",
-    "Lernrunden-Links gehen immer an die gleichen 5 Personen, Tim nie …",
-    "Fake-PDF: „Tom hat F-Note“ – 200 Downloads, Spott folgt …"
+    # 1) Gruppen-Übrigbleiber
+    "Der Dozent teilt 11 Studierende in Zweier-gruppen ein. Am Ende bleibt Sophie übrig. "
+    "Er sagt nur: „Mach einfach die Zusammenfassung für alle, ja?“ – alle lachen, Sophie schweigt.",
+
+    # 2) WhatsApp-Kommentar zum Outfit
+    "Max postet ein Partypic in die Kursgruppe. Kurz darauf sendet jemand dasselbe Bild mit dem Text: "
+    "„Hast wohl den Dresscode ‘Altkleider‘ gewählt 😂“. 15 Likes, drei besorgte Nachfragen.",
+
+    # 3) Mikro-Kommentar im Livestream
+    "Während Lisas Online-Präsentation rauscht ihr Ton. Im Zoom-Chat schreibt jemand öffentlich: "
+    "„Bitte ein vernünftiges Mikro benutzen! 🙄“. Der Satz bleibt für alle sichtbar, bis sie fertig ist.",
+
+    # 4) Code-Vorwurf mitten im Meeting
+    "In einem Projekt-Zoom ruft plötzlich ein Teammitglied: „Stopp, Sam hat den Algorithmus 1:1 von GitHub geklaut!“ "
+    "Diskussion bricht aus – einige glauben es sofort, andere verteidigen Sam, Meeting läuft weiter …",
+
+    # 5) Campus-Meme über Ben
+    "Auf der anonymen Uni-Meme-Seite erscheint ein Foto von Ben, wie er in der Vorlesung kurz einnickt. "
+    "Überschrift: „Wer Party macht, muss auch schlafen 😴“. Viele finden’s lustig – Ben erfährt es erst am nächsten Tag.",
+
+    # 6) Flirt-Gerücht über Anna
+    "In einem anonymen Campus-Geständnis steht: „Anna hat die Statistik-Klausur nur bestanden, weil sie den Tutor angeflirtet hat 😉“. "
+    "Der Post macht die Runde; einige glauben es, andere verteidigen Anna."
+
 ]
+
+
+
 
 # ─── 2. Globaler Store ──────────────────────────────────────────────────────
 store = st.session_state.setdefault("_GLOBAL", {"idx": 0, "votes": []})
