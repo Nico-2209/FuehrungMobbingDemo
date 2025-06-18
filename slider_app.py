@@ -1,47 +1,44 @@
+# slider_app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ─── 1. Szenen ──────────────────────────────────────────────────────────────
+# ─── 1. Szenen (6 ambivalente Fälle) ────────────────────────────────────────
 SCENES = [
     # 1) Gruppen-Übrigbleiber
     "Der Dozent teilt 11 Studierende in Zweier-gruppen ein. Am Ende bleibt Sophie übrig. "
-    "Er sagt nur: „Mach einfach die Zusammenfassung für alle, ja?“ – alle lachen, Sophie schweigt.",
+    "Er sagt nur: „Mach doch einfach die Zusammenfassung für alle, ja?“ – alle lachen, Sophie schweigt.",
 
     # 2) WhatsApp-Kommentar zum Outfit
-    "Max postet ein Partypic in die Kursgruppe. Kurz darauf sendet jemand dasselbe Bild mit dem Text: "
-    "„Hast wohl den Dresscode ‘Altkleider‘ gewählt 😂“. 15 Likes, drei besorgte Nachfragen.",
+    "Max postet ein Party-Selfie in die Kursgruppe. Kurz darauf sendet jemand dasselbe Bild mit dem Text: "
+    "„Hast wohl den Dresscode *Altkleider* gewählt 😂“. 15 Likes, drei besorgte Nachfragen.",
 
     # 3) Mikro-Kommentar im Livestream
     "Während Lisas Online-Präsentation rauscht ihr Ton. Im Zoom-Chat schreibt jemand öffentlich: "
-    "„Bitte ein vernünftiges Mikro benutzen! 🙄“. Der Satz bleibt für alle sichtbar, bis sie fertig ist.",
+    "„Bitte ein vernünftiges Mikro benutzen! 🙄“. Der Satz bleibt sichtbar, bis sie fertig ist.",
 
     # 4) Code-Vorwurf mitten im Meeting
     "In einem Projekt-Zoom ruft plötzlich ein Teammitglied: „Stopp, Sam hat den Algorithmus 1:1 von GitHub geklaut!“ "
-    "Diskussion bricht aus – einige glauben es sofort, andere verteidigen Sam, Meeting läuft weiter …",
+    "Diskussion bricht aus – einige glauben es sofort, andere verteidigen Sam.",
 
     # 5) Campus-Meme über Ben
-    "Auf der anonymen Uni-Meme-Seite erscheint ein Foto von Ben, wie er in der Vorlesung kurz einnickt. "
-    "Überschrift: „Wer Party macht, muss auch schlafen 😴“. Viele finden’s lustig – Ben erfährt es erst am nächsten Tag.",
+    "Auf der anonymen Uni-Meme-Seite erscheint ein Foto von Ben, wie er in der Vorlesung einnickt. "
+    "Überschrift: „Wer Party macht, muss auch schlafen 😴“. Viele finden’s lustig – Ben sieht es erst am nächsten Tag.",
 
     # 6) Flirt-Gerücht über Anna
-    "In einem anonymen Campus-Geständnis steht: „Anna hat die Statistik-Klausur nur bestanden, weil sie den Tutor angeflirtet hat 😉“. "
+    "Im Account „CampusConfessions“ steht: „Anna hat die Statistik-Klausur nur bestanden, weil sie den Tutor angeflirtet hat 😉“. "
     "Der Post macht die Runde; einige glauben es, andere verteidigen Anna."
-
 ]
 
-
-
-
-# ─── 2. Globaler Store ──────────────────────────────────────────────────────
+# ─── 2. Globaler Store (server-weit) ────────────────────────────────────────
 store = st.session_state.setdefault("_GLOBAL", {"idx": 0, "votes": []})
 
 # ─── 3. Passwort für Moderator ──────────────────────────────────────────────
-MOD_PASS = "mod123"  # hier anpassen
+MOD_PASS = "mod123"  # nach Bedarf ändern
 
-# ─── Hauptfunktion ─────────────────────────────────────────────────────────
+# ─── 4. Hauptfunktion ──────────────────────────────────────────────────────
 def run_slider():
-    # Sidebar-Login
+    # –– 4.1 Sidebar-Login ––––––––––––––––––––––––––––––––––––––––––––––––
     with st.sidebar:
         st.subheader("🔐 Moderator-Login")
         if "is_mod" not in st.session_state:
@@ -50,7 +47,7 @@ def run_slider():
                 st.success("Moderator-Modus aktiviert")
         is_mod = st.session_state.get("is_mod", False)
 
-    # Szenenwahl (nur Mod)
+    # –– 4.2 Szenenverwaltung (nur Mod) ––––––––––––––––––––––––––––––––––––
     if is_mod:
         new_idx = st.sidebar.selectbox(
             "Szene wählen", range(len(SCENES)),
@@ -63,16 +60,21 @@ def run_slider():
             st.rerun()
         if st.sidebar.button("🗑 Votes reset"):
             store["votes"].clear()
-            st.session_state.pop("voted", None)
             st.rerun()
 
-    # Szene anzeigen
+    # –– 4.3 Szene anzeigen –––––––––––––––––––––––––––––––––––––––––––––––
     st.title("🎯 GrenzCheck – Wie schlimm findest du das?")
-    st.write(f"### 📝 Situation {store['idx']+1}/10")
+    st.write(f"### 📝 Situation {store['idx'] + 1}/6")
     st.write(SCENES[store["idx"]])
 
-    # Abstimmen
+    # –– 4.4 Vote-Flag pro Tab an Szene koppeln ––––––––––––––––––––––––––––
+    if st.session_state.get("scene_seen") != store["idx"]:
+        st.session_state.voted = False            # zurücksetzen
+        st.session_state.scene_seen = store["idx"]
+
     voted = st.session_state.get("voted", False)
+
+    # –– 4.5 Abstimmen ––––––––––––––––––––––––––––––––––––––––––––––––––––
     col_val, col_btn = st.columns([4, 1])
     with col_val:
         score = st.slider("0 = OK … 100 = klares Mobbing", 0, 100, 50, disabled=voted)
@@ -82,21 +84,19 @@ def run_slider():
             st.session_state.voted = True
             st.rerun()
 
-    st.markdown(f"**{len(store['votes'])} Stimmen**")
+    st.markdown(f"**{len(store['votes'])} Stimmen abgegeben**")
     if st.button("🔄 Aktualisieren"): st.rerun()
-    if st.session_state.get("voted"): st.success("Danke! Dein Vote wurde gespeichert.")
+    if voted: st.success("Danke! Dein Vote wurde gespeichert.")
 
-    # Histogramm (nur Mod)
+    # –– 4.6 Histogramm (sichtbar nur für Mod) –––––––––––––––––––––––––––––
     if store["votes"] and is_mod:
         df = pd.DataFrame({"Score": store["votes"]})
 
         # Bucket-Schema: 0-5, 5-10, …, 95-100
-        edges  = list(range(0, 101, 5))           # 0,5,10,…,100
-        labels = [f"{edges[i]}-{edges[i+1]}" for i in range(len(edges)-1)]
-        df["Bin"] = pd.cut(
-            df.Score, bins=edges, labels=labels,
-            include_lowest=True, right=True      # 5 gehört zum ersten Bucket
-        )
+        edges  = [0, 5] + list(range(10, 101, 5))
+        labels = [f"{edges[i]}-{edges[i+1]}" for i in range(len(edges) - 1)]
+        df["Bin"] = pd.cut(df.Score, bins=edges, labels=labels,
+                           include_lowest=True, right=True)
 
         fig = px.histogram(
             df, x="Bin",
@@ -107,6 +107,6 @@ def run_slider():
             title="Verteilung der Stimmen",
             xaxis_title="Schweregrad",
             yaxis_title="Anzahl",
-            yaxis=dict(dtick=1)                 # ganze Zahlen
+            yaxis=dict(dtick=1)
         )
         st.plotly_chart(fig, use_container_width=True)
